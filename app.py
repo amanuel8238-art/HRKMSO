@@ -1,37 +1,30 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.secret_key = 'hrkmso_secret_key'
 
-# Database Qindeessuu (Render irratti SQLite ykn PostgreSQL fayyadamuu dandeessa)
+# Database Qindeessuu
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///hrkmso.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Model / Gabatee Daataa (Personnel/Ogeessaaf)
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(100), nullable=False)
     position = db.Column(db.String(100), nullable=False)
-    branch = db.Column(db.String(100), nullable=False) # Fakkeenyaaf Dadar, kkf
+    branch = db.Column(db.String(100), nullable=False)
 
-    def __repr__(self):
-        return f'<Employee {self.full_name}>'
-
-# Database uumuu
 with app.app_context():
     db.create_all()
 
-# Fuula Duraa (Home)
 @app.route('/')
 def index():
     employees = Employee.query.all()
     return render_template('index.html', employees=employees)
 
-# Ogeessa Dabaluu Route
 @app.route('/add', methods=['POST'])
 def add_employee():
     full_name = request.form.get('full_name')
