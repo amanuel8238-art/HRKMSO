@@ -22,21 +22,27 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    employees = Employee.query.all()
-    return render_template('index.html', employees=employees)
+    try:
+        employees = Employee.query.all()
+        return render_template('index.html', employees=employees)
+    except Exception as e:
+        return f"TEMPLATE/DB ERROR: {str(e)}"
 
 @app.route('/add', methods=['POST'])
 def add_employee():
-    full_name = request.form.get('full_name')
-    position = request.form.get('position')
-    branch = request.form.get('branch')
-    
-    if full_name and position and branch:
-        new_emp = Employee(full_name=full_name, position=position, branch=branch)
-        db.session.add(new_emp)
-        db.session.commit()
+    try:
+        full_name = request.form.get('full_name')
+        position = request.form.get('position')
+        branch = request.form.get('branch')
+        
+        if full_name and position and branch:
+            new_emp = Employee(full_name=full_name, position=position, branch=branch)
+            db.session.add(new_emp)
+            db.session.commit()
+    except Exception as e:
+        print(f"Error: {e}")
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)
