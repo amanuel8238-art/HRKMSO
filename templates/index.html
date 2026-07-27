@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HRKMSO - Komishinii Manneen Sirreessaa Oromiyaa</title>
+</head>
+<body>
+    <h1>Galmee Hojjettoota HRKMSO</h1>
+    
+    <!-- Ogeessa Haaraa Galchuuf -->
+    <form action="/add" method="POST">
+        Maqaa Guutuu: <input type="text" name="full_name" required><br><br>
+        Sadarkaa Hojii: <input type="text" name="position" required><br><br>
+        Damee/Aanaa (Fakkeenyaaf Dadar): <input type="text" name="branch" required><br><br>
+        <button type="submit">Galmeessi</button>
+    </form>
+
+    <hr>
+    
+    <h2>Hojjettoota Galmaa'an</h2>
+    <ul>
+        {% for emp in employees %}
+            <li>{{ emp.full_name }} - {{ emp.position }} ({{ emp.branch }})</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
