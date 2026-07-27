@@ -1,26 +1,242 @@
 <!DOCTYPE html>
-<html>
+<html lang="om">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HRKMSO - Komishinii Manneen Sirreessaa Oromiyaa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-    <h1>Galmee Hojjettoota HRKMSO</h1>
-    
-    <!-- Ogeessa Haaraa Galchuuf -->
-    <form action="/add" method="POST">
-        Maqaa Guutuu: <input type="text" name="full_name" required><br><br>
-        Sadarkaa Hojii: <input type="text" name="position" required><br><br>
-        Damee/Aanaa (Fakkeenyaaf Dadar): <input type="text" name="branch" required><br><br>
-        <button type="submit">Galmeessi</button>
-    </form>
+<body class="bg-gray-100 font-sans">
 
-    <hr>
-    
-    <h2>Hojjettoota Galmaa'an</h2>
-    <ul>
-        {% for emp in employees %}
-            <li>{{ emp.full_name }} - {{ emp.position }} ({{ emp.branch }})</li>
-        {% endfor %}
-    </ul>
+    <!-- Navbar -->
+    <nav class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-building-columns text-2xl"></i>
+            <span class="text-xl font-bold">HRKMSO - Komishinii Manneen Sirreessaa Oromiyaa</span>
+        </div>
+        <div id="user-info" class="flex items-center space-x-4">
+            <span id="logged-user" class="text-sm bg-blue-800 px-3 py-1 rounded">Admin</span>
+            <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"><i class="fa-solid fa-right-from-bracket"></i> Ba'i</button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-4 md:p-6">
+        
+        <!-- Dashboard Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-600">
+                <p class="text-gray-500 text-sm">Miseensota Guutuu</p>
+                <h3 id="total-members" class="text-2xl font-bold text-gray-800">0</h3>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-600">
+                <p class="text-gray-500 text-sm">Mindaa Walii Gala</p>
+                <h3 id="total-salary" class="text-2xl font-bold text-gray-800">0.00 ETB</h3>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-600">
+                <p class="text-gray-500 text-sm">Dhiirota</p>
+                <h3 id="total-males" class="text-2xl font-bold text-gray-800">0</h3>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-pink-600">
+                <p class="text-gray-500 text-sm">Dubartoota</p>
+                <h3 id="total-females" class="text-2xl font-bold text-gray-800">0</h3>
+            </div>
+        </div>
+
+        <!-- Controls & Search -->
+        <div class="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center w-full md:w-1/2 space-x-2">
+                <input type="text" id="search-input" placeholder="Maqaa, ID ykn Aanaa/Dameedhaan barbaadi..." class="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="searchMembers()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"><i class="fa-solid fa-search"></i></button>
+            </div>
+            <div class="flex space-x-2 w-full md:w-auto justify-end">
+                <button onclick="openAddModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"><i class="fa-solid fa-user-plus"></i> Miseensa Haaraa Galchi</button>
+            </div>
+        </div>
+
+        <!-- Members Table -->
+        <div class="bg-white rounded-lg shadow overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-200 text-gray-700 text-sm">
+                        <th class="p-3">ID</th>
+                        <th class="p-3">Maqaa Guutuu</th>
+                        <th class="p-3">Damee (Branch)</th>
+                        <th class="p-3">Sadarkaa</th>
+                        <th class="p-3">Gita Hojii</th>
+                        <th class="p-3">Mindaa Walii Gala</th>
+                        <th class="p-3 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="members-table-body" class="text-sm divide-y divide-gray-200">
+                    <!-- Data will be loaded here dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal for Add/Edit Member -->
+    <div id="member-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl my-8">
+            <h2 id="modal-title" class="text-xl font-bold mb-4 text-blue-900">Miseensa Haaraa Galchuu</h2>
+            <form id="member-form" onsubmit="saveMember(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">ID / Lakk. Addaa</label>
+                    <input type="text" id="m-id" required class="w-full border p-2 rounded mt-1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Maqaa Guutuu</label>
+                    <input type="text" id="m-name" required class="w-full border p-2 rounded mt-1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Damee (Branch / Dadar, kkf)</label>
+                    <input type="text" id="m-branch" required class="w-full border p-2 rounded mt-1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Sadarkaa Hojii (Rank)</label>
+                    <input type="text" id="m-rank" required class="w-full border p-2 rounded mt-1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Guyyaa Gudina Sadarkaa</label>
+                    <input type="date" id="m-promo" required class="w-full border p-2 rounded mt-1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Saala</label>
+                    <select id="m-gender" class="w-full border p-2 rounded mt-1">
+                        <option value="Dhiira">Dhiira</option>
+                        <option value="Dubara">Dubara</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Mindaa Sadarkaa (Rank Salary)</label>
+                    <input type="number" step="0.01" id="m-salary" required class="w-full border p-2 rounded mt-1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Gita Hojii (Job Position)</label>
+                    <input type="text" id="m-position" required class="w-full border p-2 rounded mt-1">
+                </div>
+                <div class="md:col-span-2 flex justify-end space-x-3 mt-4">
+                    <button type="button" onclick="closeModal()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Dhiisi</button>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Galchi / Olkaa'i</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript for API Integration -->
+    <script>
+        let members = [];
+
+        async function fetchMembers() {
+            try {
+                const response = await fetch('/api/members');
+                members = await response.json();
+                renderTable(members);
+                updateStats(members);
+            } catch (error) {
+                console.error('Error fetching members:', error);
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('members-table-body');
+            tbody.innerHTML = '';
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center p-4 text-gray-500">Miseensonni hin jiran.</td></tr>`;
+                return;
+            }
+            data.forEach(m => {
+                const totalSal = (parseFloat(m.rankSalary) || 0) + (parseFloat(m.locationAllowance) || 0) + (parseFloat(m.foodAllowance) || 0);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3">${m.id}</td>
+                        <td class="p-3 font-medium">${m.name}</td>
+                        <td class="p-3">${m.branch}</td>
+                        <td class="p-3">${m.rank}</td>
+                        <td class="p-3">${m.jobPosition}</td>
+                        <td class="p-3">${totalSal.toFixed(2)} ETB</td>
+                        <td class="p-3 text-center space-x-2">
+                            <button onclick="editMember('${m.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteMember('${m.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function updateStats(data) {
+            document.getElementById('total-members').innerText = data.length;
+            let totalSal = 0;
+            let males = 0;
+            let females = 0;
+            data.forEach(m => {
+                totalSal += (parseFloat(m.rankSalary) || 0) + (parseFloat(m.locationAllowance) || 0) + (parseFloat(m.foodAllowance) || 0);
+                if (m.gender === 'Dhiira') males++;
+                else if (m.gender === 'Dubara') females++;
+            });
+            document.getElementById('total-salary').innerText = totalSal.toFixed(2) + ' ETB';
+            document.getElementById('total-males').innerText = males;
+            document.getElementById('total-females').innerText = females;
+        }
+
+        function openAddModal() {
+            document.getElementById('member-form').reset();
+            document.getElementById('m-id').readOnly = false;
+            document.getElementById('modal-title').innerText = "Miseensa Haaraa Galchuu";
+            document.getElementById('member-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('member-modal').classList.add('hidden');
+        }
+
+        async function saveMember(event) {
+            event.preventDefault();
+            const data = {
+                id: document.getElementById('m-id').value,
+                name: document.getElementById('m-name').value,
+                branch: document.getElementById('m-branch').value,
+                rank: document.getElementById('m-rank').value,
+                promotion_date: document.getElementById('m-promo').value,
+                gender: document.getElementById('m-gender').value,
+                rank_salary: parseFloat(document.getElementById('m-salary').value) || 0,
+                job_position: document.getElementById('m-position').value,
+                hire_year: "2026",
+                birth_year: "1990",
+                edu_level: "Degree",
+                status: "Active"
+            };
+
+            const response = await fetch('/api/members', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                closeModal();
+                fetchMembers();
+            } else {
+                alert('Galchuuf irratti rakkoon uumame.');
+            }
+        }
+
+        async function deleteMember(id) {
+            if (confirm('Miseensa kana haquu feetaa?')) {
+                const response = await fetch(`/api/members/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    fetchMembers();
+                }
+            }
+        }
+
+        function logout() {
+            alert('Baateerta.');
+        }
+
+        // Load data on page load
+        fetchMembers();
+    </script>
 </body>
 </html>
